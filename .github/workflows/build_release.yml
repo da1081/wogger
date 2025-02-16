@@ -24,7 +24,7 @@ jobs:
 
       - name: Build EXE using PyInstaller
         run: |
-          pyinstaller --onefile --noconsole --add-data "resources/*;resources" --clean main.py --name wogger
+          pyinstaller --onefile --noconsole --icon=src/resources/wogger.ico --add-data "src/resources/*;resources" --clean main.py --name wogger
 
       - name: Generate Self-Signed Certificate (PowerShell)
         shell: powershell

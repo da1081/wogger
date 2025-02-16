@@ -1,4 +1,4 @@
-name: Build & Release Wogger (Self-Signed)
+name: Build & Release Wogger
 
 on:
   workflow_dispatch:  # Manual trigger only
@@ -19,33 +19,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
-          # If you have other requirements, e.g. a requirements.txt, uncomment:
+          # If you have other requirements, e.g., a requirements.txt, uncomment:
           # pip install -r requirements.txt
 
       - name: Build EXE using PyInstaller
         run: |
-          pyinstaller --onefile --noconsole --icon=src/resources/wogger.ico --add-data "src/resources/*;resources" --clean main.py --name wogger
-
-      - name: Generate Self-Signed Certificate (PowerShell)
-        shell: powershell
-        run: |
-          # Create a self-signed certificate with some fake info
-          $subject = "CN=Wogger Inc, O=Wogger Inc, L=Wogger Street 1, S=Woggster, C=WG"
-          $cert = New-SelfSignedCertificate -CertStoreLocation Cert:\CurrentUser\My -Subject $subject -KeyExportPolicy Exportable -NotAfter (Get-Date).AddYears(1)
-          $password = ConvertTo-SecureString -String "P@ssw0rd!" -Force -AsPlainText
-          Export-PfxCertificate -Cert $cert -FilePath selfsigned.pfx -Password $password
-
-      - name: Sign the EXE using Self-Signed Certificate
-        shell: powershell
-        run: |
-          # If timestamping fails, remove /tr and /td parameters
-          signtool sign `
-            /f selfsigned.pfx `
-            /p "P@ssw0rd!" `
-            /fd SHA256 `
-            /tr http://timestamp.digicert.com `
-            /td SHA256 `
-            dist\wogger.exe
+          pyinstaller --onefile --noconsole \
+            --icon=src/resources/wogger.ico \
+            --add-data "src/resources/*;resources" \
+            --clean main.py --name wogger
 
       - name: Upload EXE as an Artifact
         uses: actions/upload-artifact@v4

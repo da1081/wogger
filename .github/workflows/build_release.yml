@@ -20,11 +20,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller
           # If you have other requirements, e.g. a requirements.txt, uncomment:
-          pip install -r requirements.txt
+          # pip install -r requirements.txt
 
       - name: Build EXE using PyInstaller
         run: |
-          PyInstaller --onefile --noconsole --icon=src/resources/wogger.ico --add-data "src/resources/*;resources" --clean main.py --name wogger
+          pyinstaller --onefile --noconsole --add-data "resources/*;resources" --clean main.py --name wogger
 
       - name: Generate Self-Signed Certificate (PowerShell)
         shell: powershell
@@ -48,7 +48,7 @@ jobs:
             dist\wogger.exe
 
       - name: Upload EXE as an Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wogger.exe
           path: dist\wogger.exe
@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download built EXE
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wogger.exe
           path: dist
@@ -76,10 +76,8 @@ jobs:
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
-            # If no tags exist, just use the last 10 commits
             NOTES=$(git log -n 10 --pretty=format:"* %s")
           else
-            # Get commits from the last tag to HEAD
             NOTES=$(git log $LAST_TAG..HEAD --pretty=format:"* %s")
           fi
           echo "RELEASE_NOTES=$NOTES" >> $GITHUB_ENV

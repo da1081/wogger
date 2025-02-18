@@ -224,17 +224,30 @@ class MainUI:
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        # Check whether "Show Today's Tasks Only" is checked
-        if self.show_today_only_var.get():
+        today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+        show_today_only = self.show_today_only_var.get()
+
+        if show_today_only:
             tasks_to_display = self.time_logger.get_tasks_for_today()
         else:
             tasks_to_display = self.time_logger.get_all_tasks()
 
         # Re-populate the tree
         sorted_tasks = sorted(tasks_to_display)
+        total_across_all_displayed = 0  # We'll sum up to show in the label
+
         for task in sorted_tasks:
-            file_total = self.time_logger.get_file_total_minutes(task_name=task)
-            total_pretty_formatted = self.time_logger.get_pretty_total(task_name=task)
+            if show_today_only:
+                # Show only today's minutes
+                file_total = self.time_logger.get_logged_minutes_for_date_and_task(today_str, task)
+                total_pretty_formatted = self.time_logger.get_pretty_total_for_date_and_task(today_str, task)
+            else:
+                # Show entire file's minutes
+                file_total = self.time_logger.get_file_total_minutes(task_name=task)
+                total_pretty_formatted = self.time_logger.get_pretty_total(task_name=task)
+
+            total_across_all_displayed += file_total
+
             self.tree.insert(
                 "",
                 tk.END,
@@ -243,14 +256,19 @@ class MainUI:
             )
 
         # Summaries
-        total_in_file = self.time_logger.get_overall_file_minutes()
-        today_str = datetime.datetime.now().strftime("%Y-%m-%d")
-        logged_today = self.time_logger.get_logged_minutes_for_date(today_str)
+        # Adjust the summary text at the bottom according to whether we are in "today only" mode
+        if show_today_only:
+            # total_across_all_displayed is effectively the sum of today's tasks
+            summary_text = f"Total for {today_str}: {total_across_all_displayed} min"
+        else:
+            total_in_file = self.time_logger.get_overall_file_minutes()
+            logged_today = self.time_logger.get_logged_minutes_for_date(today_str)
+            summary_text = (
+                f"Total in time_log.txt: {total_in_file} min | "
+                f"Today so far: {logged_today} min"
+            )
 
-        summary_text = (
-            f"Total in time_log.txt: {total_in_file} min | "
-            f"Today so far: {logged_today} min"
-        )
         self.totals_label.config(text=summary_text)
 
+        # Refresh the week overview if you want it updated as well
         self.week_overview.refresh_week_view()

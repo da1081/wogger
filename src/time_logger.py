@@ -383,4 +383,49 @@ class TimeLogger:
                 ])
         return export_path
 
+    def get_logged_minutes_for_date_and_task(self, date_str: str, task_name: str) -> int:
+        """
+        Returns the total minutes logged on a specific date *for a given task*
+        by scanning time_log.txt line by line.
+        """
+        log_path = self._get_log_path()
+        if not os.path.isfile(log_path):
+            return 0
 
+        total_for_day_task = 0
+        with open(log_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or "|" not in line:
+                    continue
+
+                time_part, task_part = line.split("|", 1)
+                parts = time_part.split()
+                if len(parts) < 4:
+                    continue
+
+                line_date = parts[0]
+                if line_date != date_str:
+                    continue
+
+                task_line = task_part.strip()
+                if task_line.lower() == task_name.lower():
+                    hhmm_start = parts[1]
+                    hhmm_end = parts[3]
+                    try:
+                        minutes_diff = compute_minutes_between(hhmm_start, hhmm_end)
+                        total_for_day_task += minutes_diff
+                    except:
+                        pass
+        return total_for_day_task
+
+    def get_pretty_total_for_date_and_task(self, date_str: str, task_name: str) -> str:
+        """
+        Returns a pretty-formatted string (e.g. "1h 30m") of total minutes for the given date + task only.
+        """
+        total_minutes = self.get_logged_minutes_for_date_and_task(date_str, task_name)
+        return format_minutes_pretty(
+            total_minutes,
+            minutes_in_day=self.app_settings.standart_work_day,
+            days_in_week=self.app_settings.standart_days_in_week
+        )
